@@ -6,7 +6,7 @@ import (
 
 func PostSpansHandler(storage Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		spans := make([]Span, 0)
+		spans := make([]*Span, 0)
 		if err := c.BindJSON(&spans); err != nil {
 			c.Status(400)
 			return

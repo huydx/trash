@@ -1,5 +1,11 @@
 package trash
 
+import (
+	"bytes"
+	"encoding/gob"
+	"sync"
+)
+
 /**
 [
   {
@@ -27,7 +33,7 @@ package trash
 ]
 */
 
-type Spans []Span
+type Spans []*Span
 
 type Span struct {
 	ID            string `json:"id"`
@@ -47,4 +53,57 @@ type Span struct {
 		Port int    `json:"port"`
 	} `json:"remoteEndpoint"`
 	Tags map[string]string `json:"tags"`
+}
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer([]byte{})
+	},
+}
+
+func getBuffer() *bytes.Buffer {
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	return buf
+}
+
+func putBuffer(bs *bytes.Buffer) {
+	bufferPool.Put(bs)
+}
+
+func (s *Span) Marshal() ([]byte, error) {
+	buf := getBuffer()
+	encoder := gob.NewEncoder(buf)
+	if err := encoder.Encode(s); err != nil {
+		return nil, err
+	}
+	dup := make([]byte, buf.Len())
+	copy(dup, buf.Bytes())
+	putBuffer(buf)
+	return dup, nil
+}
+
+func (s *Span) Unmarshal(bs []byte) error {
+	buf := getBuffer()
+	decoder := gob.NewDecoder(buf)
+	return decoder.Decode(s)
+}
+
+
+func (s *Spans) Marshal() ([]byte, error) {
+	buf := getBuffer()
+	encoder := gob.NewEncoder(buf)
+	if err := encoder.Encode(s); err != nil {
+		return nil, err
+	}
+	dup := make([]byte, buf.Len())
+	copy(dup, buf.Bytes())
+	putBuffer(buf)
+	return dup, nil
+}
+
+func (s *Spans) Unmarshal(bs []byte) error {
+	buf := getBuffer()
+	decoder := gob.NewDecoder(buf)
+	return decoder.Decode(s)
 }
