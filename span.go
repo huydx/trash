@@ -3,6 +3,7 @@ package trash
 import (
 	"bytes"
 	"encoding/gob"
+	"io"
 	"sync"
 )
 
@@ -84,11 +85,10 @@ func (s *Span) Marshal() ([]byte, error) {
 }
 
 func (s *Span) Unmarshal(bs []byte) error {
-	buf := getBuffer()
+	buf := bytes.NewBuffer(bs)
 	decoder := gob.NewDecoder(buf)
 	return decoder.Decode(s)
 }
-
 
 func (s *Spans) Marshal() ([]byte, error) {
 	buf := getBuffer()
@@ -105,5 +105,9 @@ func (s *Spans) Marshal() ([]byte, error) {
 func (s *Spans) Unmarshal(bs []byte) error {
 	buf := getBuffer()
 	decoder := gob.NewDecoder(buf)
-	return decoder.Decode(s)
+	if err := decoder.Decode(s); err == io.EOF {
+		return nil
+	} else {
+		return err
+	}
 }

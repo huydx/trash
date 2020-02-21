@@ -1,6 +1,8 @@
 package trash
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSpan_Marshal(t *testing.T) {
 	s := &Span{
@@ -20,6 +22,6 @@ func TestSpan_Marshal(t *testing.T) {
 		t.Fatal(err)
 	}
 	if unmarshal.ID != "123" {
-		t.Fatal("expect same span id")
+		t.Fatalf("expect same span id, got %v", unmarshal)
 	}
 }
