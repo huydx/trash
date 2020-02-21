@@ -27,7 +27,7 @@ func (b BadgerStorage) Index(spans Spans) error {
 			log.Print(err)
 			continue
 		}
-		err = wb.Set(b.Bytes(), payload, 0)
+		err = wb.Set(b.Bytes(), payload)
 		if err != nil {
 			log.Print(err)
 		}
