@@ -21,7 +21,7 @@ func PostSpansHandler(storage Storage) gin.HandlerFunc {
 func GetTraceHandler(storage Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var id = c.Param("traceId")
-		spans, err := storage.GetTrace([]byte(id))
+		spans, err := storage.GetTrace(id)
 		if err != nil {
 			c.Status(400)
 			return

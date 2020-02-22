@@ -28,3 +28,23 @@ func TestBadgerStorage_Index(t *testing.T) {
 		t.Error("expect 2 spans")
 	}
 }
+
+func TestRotatedBadgerStorage_Index(t *testing.T) {
+	storage := &RotatedBadgerStorage{dir: "/tmp", rotation: make(map[int]*BadgerStorage)}
+	spans := []*Span{
+		{ID: "foo", TraceID: "prefix1"},
+		{ID: "bar", TraceID: "prefix1"},
+		{ID: "bar", TraceID: "prefix2"},
+	}
+	if err := storage.Index(spans); err != nil {
+		t.Error(err)
+	}
+
+	getspans, err := storage.GetTrace("prefix1")
+	if err != nil {
+		t.Error(err)
+	}
+	if len(getspans) != 2 {
+		t.Error("expect 2 spans")
+	}
+}

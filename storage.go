@@ -3,13 +3,58 @@ package trash
 import (
 	"bytes"
 	"log"
+	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/dgraph-io/badger"
 )
 
 type Storage interface {
 	Index(spans Spans) error
-	GetTrace(id []byte) (Spans, error)
+	GetTrace(id string) (Spans, error)
+}
+
+type RotatedBadgerStorage struct {
+	dir      string
+	rotation map[int]*BadgerStorage // map[yearday]storage
+}
+
+func (r RotatedBadgerStorage) Index(spans Spans) error {
+	n := time.Now()
+	yd := n.YearDay()
+	if r.rotation[yd] == nil {
+		d := n.Format("20060102")
+		db, err := badger.Open(badger.DefaultOptions(filepath.Join(r.dir, d)))
+		if err != nil {
+			log.Fatal(err)
+		}
+		r.rotation[yd] = &BadgerStorage{DB: db}
+	}
+	return r.rotation[yd].Index(spans)
+}
+
+func (r RotatedBadgerStorage) GetTrace(id string) (Spans, error) {
+	w := sync.WaitGroup{}
+	spans := make(Spans, 0)
+	mu := sync.Mutex{}
+	// fanout to all date partition
+	for _, rot := range r.rotation {
+		w.Add(1)
+		go func() {
+			defer w.Done()
+			sp, err := rot.GetTrace(id)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			mu.Lock()
+			spans = append(spans, sp...)
+			mu.Unlock()
+		}()
+	}
+	w.Wait()
+	return spans, nil
 }
 
 type BadgerStorage struct {
