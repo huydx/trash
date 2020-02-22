@@ -2,8 +2,9 @@ package trash
 
 import (
 	"bytes"
-	"github.com/dgraph-io/badger"
 	"log"
+
+	"github.com/dgraph-io/badger"
 )
 
 type Storage interface {
@@ -32,7 +33,7 @@ func (b BadgerStorage) Index(spans Spans) error {
 			log.Print(err)
 		}
 	}
-	return nil
+	return wb.Flush()
 }
 
 func (b BadgerStorage) GetTrace(id string) (Spans, error) {
